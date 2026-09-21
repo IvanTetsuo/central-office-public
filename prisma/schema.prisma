@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AdminRole {
+  ROOT
+  MANAGER
+}
+
+enum TerminalStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TerminalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Admin {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(MANAGER)
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([role])
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  adminId          String    @unique @db.Uuid
+  admin            Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model ShopOwner {
+  id        String   @id @default(uuid()) @db.Uuid
+  firstName String
+  lastName  String
+  phone     String?
+  email     String?
+  address   String?
+  shops     Shop[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+model Shop {
+  id                  String           @id @default(uuid()) @db.Uuid
+  ownerId             String           @db.Uuid
+  owner               ShopOwner        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  name                String
+  address             String
+  requisites          String?
+  login               String           @unique
+  passwordHash        String
+  credentialsVersion  Int              @default(1)
+  terminals           Terminal[]
+  terminalRequests    TerminalRequest[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([ownerId])
+}
+
+model Terminal {
+  id              String         @id @default(uuid()) @db.Uuid
+  shopId          String         @db.Uuid
+  shop            Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  macAddress      String         @unique
+  status          TerminalStatus @default(INACTIVE)
+  lastHeartbeatAt DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([shopId])
+  @@index([status])
+  @@index([lastHeartbeatAt])
+}
+
+model TerminalRequest {
+  id          String                @id @default(uuid()) @db.Uuid
+  shopId      String                @db.Uuid
+  shop        Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  macAddress  String
+  status      TerminalRequestStatus @default(PENDING)
+  comment     String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([shopId])
+  @@index([macAddress])
+  @@index([status])
+}
