@@ -1,15 +1,21 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AdminRole, PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 
-const rootEmail = process.env.ROOT_EMAIL;
-const rootPassword = process.env.ROOT_PASSWORD;
+function requireEnv(name: string): string {
+  const value = process.env[name];
 
-if (!rootEmail || !rootPassword) {
-  throw new Error('ROOT_EMAIL and ROOT_PASSWORD must be set');
+  if (!value) {
+    throw new Error(`${name} must be set`);
+  }
+
+  return value;
 }
+
+const rootEmail = requireEnv('ROOT_EMAIL');
+const rootPassword = requireEnv('ROOT_PASSWORD');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
