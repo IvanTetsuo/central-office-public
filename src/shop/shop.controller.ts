@@ -4,6 +4,7 @@ import { CreateShopDto } from './dto/create-shop.dto';
 import { UpdateShopDto } from './dto/update-shop.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ShopJwtGuard } from '../shop-auth/shop-jwt.guard';
+import { ShopOwnsParamGuard } from '../shop-auth/shop-owns-param.guard';
 
 @Controller('shop')
 export class ShopController {
@@ -22,13 +23,13 @@ export class ShopController {
   }
 
   @Get(':id')
-  @UseGuards(ShopJwtGuard)
+  @UseGuards(ShopJwtGuard, ShopOwnsParamGuard)
   findOne(@Param('id') id: string) {
     return this.shopService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(ShopJwtGuard)
+  @UseGuards(ShopJwtGuard, ShopOwnsParamGuard)
   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
     return this.shopService.update(id, updateShopDto);
   }
