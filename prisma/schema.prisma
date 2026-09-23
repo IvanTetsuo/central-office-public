@@ -98,6 +98,7 @@ model Terminal {
   shopId          String         @db.Uuid
   shop            Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
   macAddress      String         @unique
+  secretHash      String
   status          TerminalStatus @default(INACTIVE)
   lastHeartbeatAt DateTime?
   createdAt       DateTime       @default(now())

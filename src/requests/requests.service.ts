@@ -1,6 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { randomBytes } from 'crypto';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { linkedShopSelect } from '../shop/shop.service';
+import { publicTerminalSelect } from '../terminal/terminal.service';
 import { AddCommentDto } from './dto/add-comment.dto';
 
 @Injectable()
@@ -35,10 +38,13 @@ export class RequestsService {
       return request;
     }
 
+    const secret = randomBytes(32).toString('base64url');
+    const secretHash = await bcrypt.hash(secret, 12);
     const terminal = await this.prisma.terminal.upsert({
       where: { macAddress },
-      update: { status: 'ACTIVE', shopId: request.shopId },
-      create: { macAddress, status: 'ACTIVE', shopId: request.shopId },
+      update: { status: 'ACTIVE', shopId: request.shopId, secretHash },
+      create: { macAddress, status: 'ACTIVE', shopId: request.shopId, secretHash },
+      select: publicTerminalSelect,
     });
 
     const updated = await this.prisma.terminalRequest.update({
@@ -47,7 +53,7 @@ export class RequestsService {
       include: { shop: { select: linkedShopSelect } },
     });
 
-    return { terminal, request: updated };
+    return { terminal: { ...terminal, secret }, request: updated };
   }
 
   async reject(id: string) {

@@ -101,11 +101,11 @@ Seed создаёт администратора с ролью `ROOT`, если 
 
 ## Терминалы и heartbeat
 
-`POST /terminal/alive` принимает MAC-адрес уже существующего терминала, ставит статус `ACTIVE` и обновляет `lastHeartbeatAt`. Неизвестный MAC возвращает `404` и запись не создаёт. Ответ — только поля терминала, без данных магазина. Ручка без токена: её вызывает сам терминал.
+`POST /terminal/alive` принимает MAC-адрес и секрет терминала. Верный секрет ставит статус `ACTIVE` и обновляет `lastHeartbeatAt`. Неизвестный MAC возвращает `404`. Неверный секрет возвращает `401` и статус не меняет. Ответ — только поля терминала, без магазина и без секрета. Ручка без JWT: её вызывает сам терминал, доступ проверяется секретом.
 
 Список, карточка и ручная смена статуса терминала, а также все ручки `/requests` требуют access-токен администратора. Ручная смена статуса: `PATCH /terminal/:id/status` с телом `{ "status": "ACTIVE" }` или `{ "status": "INACTIVE" }`.
 
-Одобрение заявки создаёт терминал с этим MAC или обновляет существующий терминал того же магазина и переводит заявку в `APPROVED`. MAC уникален. Если MAC уже принадлежит другому магазину, approve возвращает `400`.
+Одобрение заявки создаёт терминал с этим MAC или обновляет существующий терминал того же магазина и переводит заявку в `APPROVED`. Вместе с терминалом один раз возвращается поле `secret`: его нужно сохранить на устройстве. В базе лежит только bcrypt-хеш. Повторное одобрение уже одобренной заявки новый секрет не выдаёт. MAC уникален. Если MAC уже принадлежит другому магазину, approve возвращает `400`.
 
 ## API
 
@@ -148,9 +148,9 @@ Seed создаёт администратора с ролью `ROOT`, если 
 | `GET` | `/terminal` | admin | — | массив терминалов с кратким `shop` |
 | `GET` | `/terminal/:id` | admin | — | терминал с кратким `shop` |
 | `PATCH` | `/terminal/:id/status` | admin | `status`: `ACTIVE` \| `INACTIVE` | терминал с кратким `shop` |
-| `POST` | `/terminal/alive` | public | `macAddress` | терминал со статусом `ACTIVE`, без магазина |
+| `POST` | `/terminal/alive` | public | `macAddress`, `secret` | терминал со статусом `ACTIVE`, без магазина |
 | `GET` | `/requests` | admin | — | массив заявок с кратким `shop` |
-| `PATCH` | `/requests/:id/approve` | admin | `macAddress` | `{ terminal, request }` или сама заявка, если она уже `APPROVED` |
+| `PATCH` | `/requests/:id/approve` | admin | `macAddress` | `{ terminal, request }`; в `terminal` один раз есть `secret`. Если заявка уже `APPROVED`, возвращается сама заявка |
 | `PATCH` | `/requests/:id/reject` | admin | — | заявка со статусом `REJECTED` |
 | `POST` | `/requests/:id/comment` | admin | `comment` | заявка с новым комментарием |
 | `PATCH` | `/profile/password` | admin | `currentPassword`, `newPassword` | `{ "success": true }` |
@@ -161,7 +161,7 @@ Seed создаёт администратора с ролью `ROOT`, если 
 
 Карточка владельца: `id`, `firstName`, `lastName`, `phone`, `email`, `address`, `createdAt`, `updatedAt`.
 
-Терминал: `id`, `shopId`, `macAddress`, `status` (`ACTIVE` \| `INACTIVE`), `lastHeartbeatAt`, `createdAt`, `updatedAt`. В списке, карточке и смене статуса вложен краткий `shop`. Heartbeat возвращает терминал без `shop`.
+Терминал: `id`, `shopId`, `macAddress`, `status` (`ACTIVE` \| `INACTIVE`), `lastHeartbeatAt`, `createdAt`, `updatedAt`. Хеш секрета в ответах нет. Открытый `secret` есть только в ответе первого approve. В списке, карточке и смене статуса вложен краткий `shop`. Heartbeat возвращает терминал без `shop` и без `secret`.
 
 Заявка: `id`, `shopId`, `macAddress`, `status` (`PENDING` \| `APPROVED` \| `REJECTED`), `comment`, `createdAt`, `updatedAt`. В списке и в approve вложен краткий `shop`.
 

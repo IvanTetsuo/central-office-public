@@ -1,6 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { linkedShopSelect } from '../shop/shop.service';
+
+export const publicTerminalSelect = {
+  id: true,
+  shopId: true,
+  macAddress: true,
+  status: true,
+  lastHeartbeatAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const publicTerminalWithShopSelect = {
+  ...publicTerminalSelect,
+  shop: { select: linkedShopSelect },
+} as const;
 
 @Injectable()
 export class TerminalService {
@@ -9,14 +25,14 @@ export class TerminalService {
   findAll() {
     return this.prisma.terminal.findMany({
       orderBy: { createdAt: 'asc' },
-      include: { shop: { select: linkedShopSelect } },
+      select: publicTerminalWithShopSelect,
     });
   }
 
   async findOne(id: string) {
     const terminal = await this.prisma.terminal.findUnique({
       where: { id },
-      include: { shop: { select: linkedShopSelect } },
+      select: publicTerminalWithShopSelect,
     });
     if (!terminal) {
       throw new NotFoundException('Терминал не найден');
@@ -32,21 +48,31 @@ export class TerminalService {
         status,
         lastHeartbeatAt: new Date(),
       },
-      include: { shop: { select: linkedShopSelect } },
+      select: publicTerminalWithShopSelect,
     });
   }
 
-  async heartbeat(macAddress: string) {
-    const terminal = await this.prisma.terminal.findUnique({ where: { macAddress } });
+  async heartbeat(macAddress: string, secret: string) {
+    const terminal = await this.prisma.terminal.findUnique({
+      where: { macAddress },
+      select: { id: true, secretHash: true },
+    });
     if (!terminal) {
       throw new NotFoundException('Терминал не найден');
     }
+
+    const secretMatches = await bcrypt.compare(secret, terminal.secretHash).catch(() => false);
+    if (!secretMatches) {
+      throw new UnauthorizedException('Неверный секрет терминала');
+    }
+
     return this.prisma.terminal.update({
       where: { id: terminal.id },
       data: {
         status: 'ACTIVE',
         lastHeartbeatAt: new Date(),
       },
+      select: publicTerminalSelect,
     });
   }
 }

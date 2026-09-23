@@ -13,6 +13,10 @@ class HeartbeatDto {
   @IsString()
   @IsNotEmpty({ message: 'MAC-адрес не может быть пустым' })
   macAddress: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Секрет терминала не может быть пустым' })
+  secret: string;
 }
 
 @Controller('terminal')
@@ -39,6 +43,6 @@ export class TerminalController {
 
   @Post('alive')
   heartbeat(@Body() dto: HeartbeatDto) {
-    return this.terminalService.heartbeat(dto.macAddress);
+    return this.terminalService.heartbeat(dto.macAddress, dto.secret);
   }
 }
