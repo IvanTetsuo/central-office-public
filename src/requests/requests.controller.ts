@@ -1,6 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { RequestsService } from './requests.service';
 import { AddCommentDto } from './dto/add-comment.dto';
+
+class ApproveRequestDto {
+  @IsString()
+  @IsNotEmpty({ message: 'MAC-адрес не может быть пустым' })
+  macAddress: string;
+}
 
 @Controller('requests')
 export class RequestsController {
@@ -12,7 +19,7 @@ export class RequestsController {
   }
 
   @Patch(':id/approve')
-  approve(@Param('id') id: string, @Body() dto?: { macAddress?: string }) {
+  approve(@Param('id') id: string, @Body() dto: ApproveRequestDto) {
     return this.requestsService.approve(id, dto);
   }
 
