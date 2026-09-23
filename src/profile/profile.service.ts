@@ -1,6 +1,4 @@
 import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -23,6 +21,7 @@ export class ProfileService {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.prisma.session.deleteMany({ where: { adminId } });
     await this.prisma.admin.update({
       where: { id: adminId },
       data: { passwordHash },

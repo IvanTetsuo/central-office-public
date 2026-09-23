@@ -1,13 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
-import { ProfileService } from './profile.service';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Body, Controller, Patch, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
+import { AuthenticatedUser } from '../auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ProfileService } from './profile.service';
 
-class ChangePasswordDto {
-  currentPassword: string;
-  newPassword: string;
-}
+type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('profile')
 @UseGuards(JwtAuthGuard)
@@ -15,7 +13,11 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Patch('password')
-  changePassword(@Req() req: Request & { user: any }, @Body() dto: ChangePasswordDto) {
-    return this.profileService.changePassword(req.user.id, dto.currentPassword, dto.newPassword);
+  changePassword(@Req() request: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
+    return this.profileService.changePassword(
+      request.user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 }
