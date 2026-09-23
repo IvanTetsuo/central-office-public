@@ -19,7 +19,7 @@ class HeartbeatDto {
   secret: string;
 }
 
-@Controller('terminal')
+@Controller('terminals')
 export class TerminalController {
   constructor(private readonly terminalService: TerminalService) {}
 

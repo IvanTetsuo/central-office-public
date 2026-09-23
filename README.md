@@ -97,13 +97,13 @@ Seed создаёт администратора с ролью `ROOT`, если 
 
 ### Учётные данные магазина
 
-У магазина есть уникальный `login` и пароль. Вход: `POST /shop-auth/login`. Карточка и смена логина с паролем: `GET /shop/:id` и `PATCH /shop/:id`. Токен магазина должен принадлежать магазину из `:id`, иначе `403`. Если в теле передан новый пароль, активные сессии этого магазина отзываются.
+У магазина есть уникальный `login` и пароль. Вход: `POST /shop-auth/login`. Карточка: `GET /shops/:id`. Смена логина и пароля: `PATCH /shops/:id/credentials`. Токен магазина должен принадлежать магазину из `:id`, иначе `403`. Если в теле передан новый пароль, активные сессии этого магазина отзываются.
 
 ## Терминалы и heartbeat
 
-`POST /terminal/alive` принимает MAC-адрес и секрет терминала. Верный секрет ставит статус `ACTIVE` и обновляет `lastHeartbeatAt`. Неизвестный MAC возвращает `404`. Неверный секрет возвращает `401` и статус не меняет. Ответ — только поля терминала, без магазина и без секрета. Ручка без JWT: её вызывает сам терминал, доступ проверяется секретом.
+`POST /terminals/alive` принимает MAC-адрес и секрет терминала. Верный секрет ставит статус `ACTIVE` и обновляет `lastHeartbeatAt`. Неизвестный MAC возвращает `404`. Неверный секрет возвращает `401` и статус не меняет. Ответ — только поля терминала, без магазина и без секрета. Ручка без JWT: её вызывает сам терминал, доступ проверяется секретом.
 
-Список, карточка и ручная смена статуса терминала, а также все ручки `/requests` требуют access-токен администратора. Ручная смена статуса: `PATCH /terminal/:id/status` с телом `{ "status": "ACTIVE" }` или `{ "status": "INACTIVE" }`.
+Список, карточка и ручная смена статуса терминала, а также все ручки `/requests` требуют access-токен администратора. Ручная смена статуса: `PATCH /terminals/:id/status` с телом `{ "status": "ACTIVE" }` или `{ "status": "INACTIVE" }`.
 
 Одобрение заявки создаёт терминал с этим MAC или обновляет существующий терминал того же магазина и переводит заявку в `APPROVED`. Вместе с терминалом один раз возвращается поле `secret`: его нужно сохранить на устройстве. В базе лежит только bcrypt-хеш. Повторное одобрение уже одобренной заявки новый секрет не выдаёт. MAC уникален. Если MAC уже принадлежит другому магазину, approve возвращает `400`.
 
@@ -136,19 +136,19 @@ Seed создаёт администратора с ролью `ROOT`, если 
 | `POST` | `/shop-owners` | admin | `firstName`, `lastName`, `phone`, `email`, `address` | созданный владелец |
 | `PATCH` | `/shop-owners/:id` | admin | любые из полей создания | обновлённый владелец |
 | `DELETE` | `/shop-owners/:id` | admin | — | `{ "success": true }`; отказ, если есть магазины |
-| `GET` | `/shop` | admin | — | массив магазинов с `owner` |
-| `POST` | `/shop` | admin | `ownerId`, `name`, `address`, `requisites`, `login`, `password` | созданный магазин с `owner` |
-| `GET` | `/shop/:id` | shop, только свой `:id` | — | магазин с `owner`; чужой `:id` — `403` |
-| `PATCH` | `/shop/:id` | shop, только свой `:id` | `login`, `password` | магазин с новым логином; при новом пароле сессии отзываются; чужой `:id` — `403` |
-| `DELETE` | `/shop/:id` | admin | — | удалённый магазин с `owner` |
+| `GET` | `/shops` | admin | — | массив магазинов с `owner` |
+| `POST` | `/shops` | admin | `ownerId`, `name`, `address`, `requisites`, `login`, `password` | созданный магазин с `owner` |
+| `GET` | `/shops/:id` | shop, только свой `:id` | — | магазин с `owner`; чужой `:id` — `403` |
+| `PATCH` | `/shops/:id/credentials` | shop, только свой `:id` | `login`, `password` | магазин с новым логином; при новом пароле сессии отзываются; чужой `:id` — `403` |
+| `DELETE` | `/shops/:id` | admin | — | удалённый магазин с `owner` |
 | `POST` | `/shop-auth/login` | public | `login`, `password` | пара токенов и краткая карточка магазина |
 | `POST` | `/shop-auth/refresh` | public | `refreshToken` | новая пара токенов и краткая карточка магазина |
 | `GET` | `/shop-auth/me` | shop | — | `{ id, shopId, login, ownerId, sessionId }` |
 | `POST` | `/shop-auth/logout` | shop | — | `{ "success": true }` |
-| `GET` | `/terminal` | admin | — | массив терминалов с кратким `shop` |
-| `GET` | `/terminal/:id` | admin | — | терминал с кратким `shop` |
-| `PATCH` | `/terminal/:id/status` | admin | `status`: `ACTIVE` \| `INACTIVE` | терминал с кратким `shop` |
-| `POST` | `/terminal/alive` | public | `macAddress`, `secret` | терминал со статусом `ACTIVE`, без магазина |
+| `GET` | `/terminals` | admin | — | массив терминалов с кратким `shop` |
+| `GET` | `/terminals/:id` | admin | — | терминал с кратким `shop` |
+| `PATCH` | `/terminals/:id/status` | admin | `status`: `ACTIVE` \| `INACTIVE` | терминал с кратким `shop` |
+| `POST` | `/terminals/alive` | public | `macAddress`, `secret` | терминал со статусом `ACTIVE`, без магазина |
 | `GET` | `/requests` | admin | — | массив заявок с кратким `shop` |
 | `PATCH` | `/requests/:id/approve` | admin | `macAddress` | `{ terminal, request }`; в `terminal` один раз есть `secret`. Если заявка уже `APPROVED`, возвращается сама заявка |
 | `PATCH` | `/requests/:id/reject` | admin | — | заявка со статусом `REJECTED` |
@@ -157,7 +157,7 @@ Seed создаёт администратора с ролью `ROOT`, если 
 
 Карточка администратора: `id`, `name`, `email`, `role` (`ROOT` \| `MANAGER`), `createdAt`, `updatedAt`. Поля `passwordHash` в ответах администратора и магазина нет. В ответе login/refresh поля `createdAt` и `updatedAt` тоже нет.
 
-Карточка магазина: `id`, `ownerId`, `name`, `address`, `requisites`, `login`, `createdAt`, `updatedAt`. В ручках `/shop` дополнительно вложен `owner`. В списке владельцев вложенный магазин содержит те же поля, без хеша пароля. У терминала и заявки вложенный `shop` — только `id`, `ownerId`, `name`, `createdAt`, `updatedAt`, без адреса, реквизитов и логина.
+Карточка магазина: `id`, `ownerId`, `name`, `address`, `requisites`, `login`, `createdAt`, `updatedAt`. В ручках `/shops` дополнительно вложен `owner`. В списке владельцев вложенный магазин содержит те же поля, без хеша пароля. У терминала и заявки вложенный `shop` — только `id`, `ownerId`, `name`, `createdAt`, `updatedAt`, без адреса, реквизитов и логина.
 
 Карточка владельца: `id`, `firstName`, `lastName`, `phone`, `email`, `address`, `createdAt`, `updatedAt`.
 

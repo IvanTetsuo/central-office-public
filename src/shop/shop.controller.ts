@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ShopJwtGuard } from '../shop-auth/shop-jwt.guard';
 import { ShopOwnsParamGuard } from '../shop-auth/shop-owns-param.guard';
 
-@Controller('shop')
+@Controller('shops')
 export class ShopController {
   constructor(private readonly shopService: ShopService) {}
 
@@ -28,7 +28,7 @@ export class ShopController {
     return this.shopService.findOne(id);
   }
 
-  @Patch(':id')
+  @Patch(':id/credentials')
   @UseGuards(ShopJwtGuard, ShopOwnsParamGuard)
   update(@Param('id') id: string, @Body() updateShopDto: UpdateShopDto) {
     return this.shopService.update(id, updateShopDto);
