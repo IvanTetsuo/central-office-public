@@ -4,6 +4,22 @@ import { UpdateShopDto } from './dto/update-shop.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
+export const publicShopSelect = {
+  id: true,
+  ownerId: true,
+  name: true,
+  address: true,
+  requisites: true,
+  login: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const publicShopWithOwnerSelect = {
+  ...publicShopSelect,
+  owner: true,
+} as const;
+
 @Injectable()
 export class ShopService {
   constructor(private readonly prisma: PrismaService) {}
@@ -33,21 +49,21 @@ export class ShopService {
         passwordHash,
         ownerId,
       },
-      include: { owner: true },
+      select: publicShopWithOwnerSelect,
     });
   }
 
   findAll() {
     return this.prisma.shop.findMany({
       orderBy: { createdAt: 'asc' },
-      include: { owner: true },
+      select: publicShopWithOwnerSelect,
     });
   }
 
   async findOne(id: string) {
     const shop = await this.prisma.shop.findUnique({
       where: { id },
-      include: { owner: true },
+      select: publicShopWithOwnerSelect,
     });
 
     if (!shop) {
@@ -70,7 +86,7 @@ export class ShopService {
 
     const passwordHash = updateShopDto.password
       ? await bcrypt.hash(updateShopDto.password, 12)
-      : shop.passwordHash;
+      : await this.getPasswordHash(id);
 
     const updated = await this.prisma.shop.update({
       where: { id },
@@ -78,7 +94,7 @@ export class ShopService {
         login,
         passwordHash,
       },
-      include: { owner: true },
+      select: publicShopWithOwnerSelect,
     });
 
     if (updateShopDto.password) {
@@ -96,7 +112,20 @@ export class ShopService {
 
     return this.prisma.shop.delete({
       where: { id },
-      include: { owner: true },
+      select: publicShopWithOwnerSelect,
     });
+  }
+
+  private async getPasswordHash(id: string): Promise<string> {
+    const shop = await this.prisma.shop.findUnique({
+      where: { id },
+      select: { passwordHash: true },
+    });
+
+    if (!shop) {
+      throw new NotFoundException('Магазин не найден');
+    }
+
+    return shop.passwordHash;
   }
 }

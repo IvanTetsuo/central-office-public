@@ -8,6 +8,7 @@ import {
 import { CreateShopOwnerDto } from './dto/create-shop-owner.dto';
 import { UpdateShopOwnerDto } from './dto/update-shop-owner.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { publicShopSelect } from '../shop/shop.service';
 
 @Injectable()
 export class ShopOwnersService {
@@ -29,7 +30,7 @@ export class ShopOwnersService {
   findAll() {
     return this.prisma.shopOwner.findMany({
       orderBy: {createdAt: 'asc'},
-      include: {shops: true},
+      include: { shops: { select: publicShopSelect } },
     });
   }
 
