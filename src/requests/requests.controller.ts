@@ -3,6 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestsService } from './requests.service';
 import { AddCommentDto } from './dto/add-comment.dto';
+import { CreateRequestDto } from './dto/create-request.dto';
 
 class ApproveRequestDto {
   @IsString()
@@ -14,6 +15,11 @@ class ApproveRequestDto {
 @UseGuards(JwtAuthGuard)
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
+
+  @Post()
+  create(@Body() dto: CreateRequestDto) {
+    return this.requestsService.create(dto);
+  }
 
   @Get()
   list() {

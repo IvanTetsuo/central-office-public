@@ -105,7 +105,9 @@ Seed создаёт администратора с ролью `ROOT`, если 
 
 Список, карточка и ручная смена статуса терминала, а также все ручки `/requests` требуют access-токен администратора. Ручная смена статуса: `PATCH /terminals/:id/status` с телом `{ "status": "ACTIVE" }` или `{ "status": "INACTIVE" }`.
 
-Одобрение заявки создаёт терминал с этим MAC или обновляет существующий терминал того же магазина и переводит заявку в `APPROVED`. Вместе с терминалом один раз возвращается поле `secret`: его нужно сохранить на устройстве. В базе лежит только bcrypt-хеш. Повторное одобрение уже одобренной заявки новый секрет не выдаёт. MAC уникален. Если MAC уже принадлежит другому магазину, approve возвращает `400`.
+Заявка создаётся через `POST /requests` со статусом `PENDING`. Одобрить и отклонить можно только заявку в `PENDING`. Отклонённую нельзя одобрить, одобренную нельзя отклонить: ответ `409`.
+
+Одобрение в одной транзакции создаёт терминал со статусом `INACTIVE` и переводит заявку в `APPROVED`. Вместе с терминалом один раз возвращается поле `secret`: его нужно сохранить на устройстве. В базе лежит только bcrypt-хеш. Повторный approve уже одобренной заявки новый терминал не создаёт и возвращает `{ terminal, request }` без нового секрета. Если MAC уже занят, approve возвращает `400`.
 
 ## API
 
@@ -149,9 +151,10 @@ Seed создаёт администратора с ролью `ROOT`, если 
 | `GET` | `/terminals/:id` | admin | — | терминал с кратким `shop` |
 | `PATCH` | `/terminals/:id/status` | admin | `status`: `ACTIVE` \| `INACTIVE` | терминал с кратким `shop` |
 | `POST` | `/terminals/alive` | public | `macAddress`, `secret` | терминал со статусом `ACTIVE`, без магазина |
+| `POST` | `/requests` | admin | `shopId`, `macAddress`, `comment` | заявка со статусом `PENDING` и кратким `shop` |
 | `GET` | `/requests` | admin | — | массив заявок с кратким `shop` |
-| `PATCH` | `/requests/:id/approve` | admin | `macAddress` | `{ terminal, request }`; в `terminal` один раз есть `secret`. Если заявка уже `APPROVED`, возвращается сама заявка |
-| `PATCH` | `/requests/:id/reject` | admin | — | заявка со статусом `REJECTED` |
+| `PATCH` | `/requests/:id/approve` | admin | `macAddress` | `{ terminal, request }`; терминал `INACTIVE`, в нём один раз есть `secret`. Повторный approve той же заявки возвращает ту же обёртку без нового секрета. `REJECTED` — `409` |
+| `PATCH` | `/requests/:id/reject` | admin | — | заявка со статусом `REJECTED`. Не из `PENDING` — `409` |
 | `POST` | `/requests/:id/comment` | admin | `comment` | заявка с новым комментарием |
 | `PATCH` | `/profile/password` | admin | `currentPassword`, `newPassword` | `{ "success": true }` |
 
