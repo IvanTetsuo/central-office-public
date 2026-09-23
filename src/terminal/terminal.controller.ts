@@ -1,14 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { IsIn, IsNotEmpty, IsString } from 'class-validator';
 import { TerminalService } from './terminal.service';
-import { CreateTerminalDto } from './dto/create-terminal.dto';
-import { UpdateTerminalDto } from './dto/update-terminal.dto';
 
 class UpdateStatusDto {
+  @IsString()
+  @IsIn(['ACTIVE', 'INACTIVE'], { message: 'Статус должен быть ACTIVE или INACTIVE' })
   status: 'ACTIVE' | 'INACTIVE';
 }
 
 class HeartbeatDto {
-  mac: string;
+  @IsString()
+  @IsNotEmpty({ message: 'MAC-адрес не может быть пустым' })
+  macAddress: string;
 }
 
 @Controller('terminal')
@@ -30,8 +33,8 @@ export class TerminalController {
     return this.terminalService.updateStatus(id, dto.status);
   }
 
-  @Post(':id')
-  heartbeat(@Param('id') dto: HeartbeatDto) {
-    return this.terminalService.heartbeat(dto.mac);
+  @Post('alive')
+  heartbeat(@Body() dto: HeartbeatDto) {
+    return this.terminalService.heartbeat(dto.macAddress);
   }
 }

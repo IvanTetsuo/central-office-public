@@ -1,14 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTerminalDto } from './dto/create-terminal.dto';
-import { UpdateTerminalDto } from './dto/update-terminal.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TerminalService {
   constructor(private readonly prisma: PrismaService) {}
-  // create(createTerminalDto: CreateTerminalDto) {
-  //   return 'This action adds a new terminal';
-  // }
 
   findAll() {
     return this.prisma.terminal.findMany({
@@ -49,7 +44,7 @@ export class TerminalService {
       where: { id: terminal.id },
       data: {
         status: 'ACTIVE',
-        lastSeen: new Date(),
+        lastHeartbeatAt: new Date(),
       },
       include: { shop: true },
     });
