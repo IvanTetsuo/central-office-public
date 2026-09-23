@@ -10,6 +10,7 @@ import { ShopModule } from './shop/shop.module';
 import { TerminalModule } from './terminal/terminal.module';
 import { RequestsModule } from './requests/requests.module';
 import { ProfileModule } from './profile/profile.module';
+import { ShopAuthModule } from './shop-auth/shop-auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ProfileModule } from './profile/profile.module';
     TerminalModule,
     RequestsModule,
     ProfileModule,
+    ShopAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

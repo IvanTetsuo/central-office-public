@@ -72,7 +72,7 @@ export class ShopService {
       ? await bcrypt.hash(updateShopDto.password, 12)
       : shop.passwordHash;
 
-    return this.prisma.shop.update({
+    const updated = await this.prisma.shop.update({
       where: { id },
       data: {
         login,
@@ -80,6 +80,15 @@ export class ShopService {
       },
       include: { owner: true },
     });
+
+    if (updateShopDto.password) {
+      await this.prisma.shopSession.updateMany({
+        where: { shopId: id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+
+    return updated;
   }
 
   async remove(id: string) {

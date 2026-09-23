@@ -73,10 +73,24 @@ model Shop {
   passwordHash        String
   terminals           Terminal[]
   terminalRequests    TerminalRequest[]
+  sessions            ShopSession[]
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
   @@index([ownerId])
+}
+
+model ShopSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  shopId           String    @unique @db.Uuid
+  shop             Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model Terminal {
