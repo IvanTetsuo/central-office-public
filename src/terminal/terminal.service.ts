@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { publicShopSelect } from '../shop/shop.service';
+import { linkedShopSelect } from '../shop/shop.service';
 
 @Injectable()
 export class TerminalService {
@@ -9,14 +9,14 @@ export class TerminalService {
   findAll() {
     return this.prisma.terminal.findMany({
       orderBy: { createdAt: 'asc' },
-      include: { shop: { select: publicShopSelect } },
+      include: { shop: { select: linkedShopSelect } },
     });
   }
 
   async findOne(id: string) {
     const terminal = await this.prisma.terminal.findUnique({
       where: { id },
-      include: { shop: { select: publicShopSelect } },
+      include: { shop: { select: linkedShopSelect } },
     });
     if (!terminal) {
       throw new NotFoundException('Терминал не найден');
@@ -32,7 +32,7 @@ export class TerminalService {
         status,
         lastHeartbeatAt: new Date(),
       },
-      include: { shop: { select: publicShopSelect } },
+      include: { shop: { select: linkedShopSelect } },
     });
   }
 
@@ -47,7 +47,6 @@ export class TerminalService {
         status: 'ACTIVE',
         lastHeartbeatAt: new Date(),
       },
-      include: { shop: { select: publicShopSelect } },
     });
   }
 }

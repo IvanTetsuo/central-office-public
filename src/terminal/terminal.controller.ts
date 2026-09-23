@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TerminalService } from './terminal.service';
 
 class UpdateStatusDto {
@@ -19,16 +20,19 @@ export class TerminalController {
   constructor(private readonly terminalService: TerminalService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.terminalService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.terminalService.findOne(id);
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() dto: UpdateStatusDto) {
     return this.terminalService.updateStatus(id, dto.status);
   }

@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestsService } from './requests.service';
 import { AddCommentDto } from './dto/add-comment.dto';
 
@@ -10,6 +11,7 @@ class ApproveRequestDto {
 }
 
 @Controller('requests')
+@UseGuards(JwtAuthGuard)
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 

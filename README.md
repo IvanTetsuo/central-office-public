@@ -101,11 +101,9 @@ Seed создаёт администратора с ролью `ROOT`, если 
 
 ## Терминалы и heartbeat
 
-`POST /terminal/alive` принимает MAC-адрес уже существующего терминала, ставит статус `ACTIVE` и обновляет `lastHeartbeatAt`. Неизвестный MAC возвращает `404` и запись не создаёт.
+`POST /terminal/alive` принимает MAC-адрес уже существующего терминала, ставит статус `ACTIVE` и обновляет `lastHeartbeatAt`. Неизвестный MAC возвращает `404` и запись не создаёт. Ответ — только поля терминала, без данных магазина. Ручка без токена: её вызывает сам терминал.
 
-В первой версии у heartbeat нет отдельного секрета: достаточно знать MAC. Это риск для production: любой, кто знает MAC, может пометить терминал активным.
-
-Ручная смена статуса: `PATCH /terminal/:id/status` с телом `{ "status": "ACTIVE" }` или `{ "status": "INACTIVE" }`.
+Список, карточка и ручная смена статуса терминала, а также все ручки `/requests` требуют access-токен администратора. Ручная смена статуса: `PATCH /terminal/:id/status` с телом `{ "status": "ACTIVE" }` или `{ "status": "INACTIVE" }`.
 
 Одобрение заявки создаёт терминал с этим MAC или обновляет существующий терминал того же магазина и переводит заявку в `APPROVED`. MAC уникален. Если MAC уже принадлежит другому магазину, approve возвращает `400`.
 
@@ -119,7 +117,6 @@ Seed создаёт администратора с ролью `ROOT`, если 
 - **admin** — access-токен администратора (`ROOT` или `MANAGER`).
 - **root** — access-токен администратора с ролью `ROOT`.
 - **shop** — access-токен магазина.
-- **нет** — guard в текущей версии не подключён.
 
 ### Сводка ручек
 
@@ -148,25 +145,25 @@ Seed создаёт администратора с ролью `ROOT`, если 
 | `POST` | `/shop-auth/refresh` | public | `refreshToken` | новая пара токенов и краткая карточка магазина |
 | `GET` | `/shop-auth/me` | shop | — | `{ id, shopId, login, ownerId, sessionId }` |
 | `POST` | `/shop-auth/logout` | shop | — | `{ "success": true }` |
-| `GET` | `/terminal` | нет | — | массив терминалов с `shop` |
-| `GET` | `/terminal/:id` | нет | — | терминал с `shop` |
-| `PATCH` | `/terminal/:id/status` | нет | `status`: `ACTIVE` \| `INACTIVE` | терминал с `shop` |
-| `POST` | `/terminal/alive` | нет | `macAddress` | терминал со статусом `ACTIVE` |
-| `GET` | `/requests` | нет | — | массив заявок с `shop` |
-| `PATCH` | `/requests/:id/approve` | нет | `macAddress` | `{ terminal, request }` или сама заявка, если она уже `APPROVED` |
-| `PATCH` | `/requests/:id/reject` | нет | — | заявка со статусом `REJECTED` |
-| `POST` | `/requests/:id/comment` | нет | `comment` | заявка с новым комментарием |
+| `GET` | `/terminal` | admin | — | массив терминалов с кратким `shop` |
+| `GET` | `/terminal/:id` | admin | — | терминал с кратким `shop` |
+| `PATCH` | `/terminal/:id/status` | admin | `status`: `ACTIVE` \| `INACTIVE` | терминал с кратким `shop` |
+| `POST` | `/terminal/alive` | public | `macAddress` | терминал со статусом `ACTIVE`, без магазина |
+| `GET` | `/requests` | admin | — | массив заявок с кратким `shop` |
+| `PATCH` | `/requests/:id/approve` | admin | `macAddress` | `{ terminal, request }` или сама заявка, если она уже `APPROVED` |
+| `PATCH` | `/requests/:id/reject` | admin | — | заявка со статусом `REJECTED` |
+| `POST` | `/requests/:id/comment` | admin | `comment` | заявка с новым комментарием |
 | `PATCH` | `/profile/password` | admin | `currentPassword`, `newPassword` | `{ "success": true }` |
 
 Карточка администратора: `id`, `name`, `email`, `role` (`ROOT` \| `MANAGER`), `createdAt`, `updatedAt`. Поля `passwordHash` в ответах администратора и магазина нет. В ответе login/refresh поля `createdAt` и `updatedAt` тоже нет.
 
-Карточка магазина: `id`, `ownerId`, `name`, `address`, `requisites`, `login`, `createdAt`, `updatedAt`. В ручках `/shop` дополнительно вложен `owner`. Вложенный `shop` у терминала, заявки и в списке владельцев содержит те же поля магазина, без хеша пароля.
+Карточка магазина: `id`, `ownerId`, `name`, `address`, `requisites`, `login`, `createdAt`, `updatedAt`. В ручках `/shop` дополнительно вложен `owner`. В списке владельцев вложенный магазин содержит те же поля, без хеша пароля. У терминала и заявки вложенный `shop` — только `id`, `ownerId`, `name`, `createdAt`, `updatedAt`, без адреса, реквизитов и логина.
 
 Карточка владельца: `id`, `firstName`, `lastName`, `phone`, `email`, `address`, `createdAt`, `updatedAt`.
 
-Терминал: `id`, `shopId`, `macAddress`, `status` (`ACTIVE` \| `INACTIVE`), `lastHeartbeatAt`, `createdAt`, `updatedAt`, вложенный `shop`.
+Терминал: `id`, `shopId`, `macAddress`, `status` (`ACTIVE` \| `INACTIVE`), `lastHeartbeatAt`, `createdAt`, `updatedAt`. В списке, карточке и смене статуса вложен краткий `shop`. Heartbeat возвращает терминал без `shop`.
 
-Заявка: `id`, `shopId`, `macAddress`, `status` (`PENDING` \| `APPROVED` \| `REJECTED`), `comment`, `createdAt`, `updatedAt`. В списке и в approve дополнительно вложен `shop`.
+Заявка: `id`, `shopId`, `macAddress`, `status` (`PENDING` \| `APPROVED` \| `REJECTED`), `comment`, `createdAt`, `updatedAt`. В списке и в approve вложен краткий `shop`.
 
 ## Команды разработки
 

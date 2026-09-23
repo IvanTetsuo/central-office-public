@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { publicShopSelect } from '../shop/shop.service';
+import { linkedShopSelect } from '../shop/shop.service';
 import { AddCommentDto } from './dto/add-comment.dto';
 
 @Injectable()
@@ -10,14 +10,14 @@ export class RequestsService {
   async findAll() {
     return this.prisma.terminalRequest.findMany({
       orderBy: { createdAt: 'asc' },
-      include: { shop: { select: publicShopSelect } },
+      include: { shop: { select: linkedShopSelect } },
     });
   }
 
   async approve(id: string, dto?: { macAddress?: string }) {
     const request = await this.prisma.terminalRequest.findUnique({
       where: { id },
-      include: { shop: { select: publicShopSelect } },
+      include: { shop: { select: linkedShopSelect } },
     });
 
     if (!request) {
@@ -44,7 +44,7 @@ export class RequestsService {
     const updated = await this.prisma.terminalRequest.update({
       where: { id },
       data: { status: 'APPROVED', comment: request.comment || 'Approved' },
-      include: { shop: { select: publicShopSelect } },
+      include: { shop: { select: linkedShopSelect } },
     });
 
     return { terminal, request: updated };

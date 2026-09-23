@@ -15,6 +15,14 @@ export const publicShopSelect = {
   updatedAt: true,
 } as const;
 
+export const linkedShopSelect = {
+  id: true,
+  ownerId: true,
+  name: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 const publicShopWithOwnerSelect = {
   ...publicShopSelect,
   owner: true,
